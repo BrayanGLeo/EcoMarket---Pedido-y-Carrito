@@ -20,6 +20,7 @@ public class CarritoController {
     @Autowired
     private CarritoService carritoService;
 
+    // Agrega un item al carrito del cliente
     @PostMapping("/{clienteId}/items")
     public ResponseEntity<CarritoRespuestaDTO> addItem(@PathVariable Long clienteId,
             @RequestBody AgregarItemRespuestaDTO itemRequest) {
@@ -27,11 +28,11 @@ public class CarritoController {
             CarritoRespuestaDTO carritoActualizado = carritoService.agregarItemAlCarrito(clienteId, itemRequest);
             return new ResponseEntity<>(carritoActualizado, HttpStatus.OK);
         } catch (Exception e) {
-            // Manejar caso en que el producto no exista.
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
+    // Obtiene el carrito del cliente por su ID
     @GetMapping("/{clienteId}")
     public ResponseEntity<CarritoRespuestaDTO> getCarrito(@PathVariable Long clienteId) {
         CarritoRespuestaDTO carrito = carritoService.obtenerCarritoPorCliente(clienteId);

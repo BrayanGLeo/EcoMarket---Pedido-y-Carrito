@@ -23,6 +23,7 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
+    // Crea un nuevo pedido
     @PostMapping
     public ResponseEntity<Pedido> postPedido(@RequestBody Pedido pedido) {
         Pedido nuevo = pedidoService.guardar(pedido);
@@ -38,10 +39,12 @@ public class PedidoController {
             PedidoRespuestaDTO pedidoDTO = pedidoService.obtenerPedidoConDetalles(id);
             return new ResponseEntity<>(pedidoDTO, HttpStatus.OK);
         } catch (Exception e) {
+            e.printStackTrace();     
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
+    // Obtiene todos los pedidos
     @GetMapping
     public ResponseEntity<List<Pedido>> getPedidos() {
         List<Pedido> pedidos = pedidoService.listarTodos();
