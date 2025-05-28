@@ -59,7 +59,7 @@ public class PedidoService {
 
     // Obtiene los datos completos del cliente, incluyendo su historial de pedidos.
     private ClienteDTO obtenerDatosCompletosCliente(Long clienteId) {
-        String urlCliente = clienteServiceUrl + "/api/clientes/" + clienteId;
+        String urlCliente = clienteServiceUrl + "/" + clienteId;
         ClienteDTO clienteDTO = restTemplate.getForObject(urlCliente, ClienteDTO.class);
 
         if (clienteDTO != null) {
