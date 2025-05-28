@@ -18,7 +18,6 @@ public class CarritoController {
 
     @GetMapping("/{clienteId}")
     // Obtiene el carrito del cliente por su ID, si no existe, crea un nuevo carrito
-    // vacío para el cliente.
     public ResponseEntity<CarritoRespuestaDTO> getCarrito(@PathVariable Long clienteId) {
         CarritoRespuestaDTO carrito = carritoService.obtenerCarritoPorCliente(clienteId);
         return new ResponseEntity<>(carrito, HttpStatus.OK);
