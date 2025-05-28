@@ -23,20 +23,16 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    @GetMapping
-    // Obtiene la lista de todos los pedidos. Si no hay pedidos, retorna un código
-    // de estado 204 (No Content).
-    public ResponseEntity<List<Pedido>> getPedidos() {
-        List<Pedido> pedidos = pedidoService.listarTodos();
-        if (pedidos.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PostMapping
+    public ResponseEntity<Pedido> postPedido(@RequestBody Pedido pedido) {
+        Pedido nuevo = pedidoService.guardar(pedido);
+        if (nuevo == null) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
-        return new ResponseEntity<>(pedidos, HttpStatus.OK);
+        return new ResponseEntity<>(nuevo, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    // Obtiene un pedido por su ID. Si el pedido no existe, retorna un código de
-    // estado 404 (Not Found).
     public ResponseEntity<PedidoRespuestaDTO> getPedidoById(@PathVariable Long id) {
         try {
             PedidoRespuestaDTO pedidoDTO = pedidoService.obtenerPedidoConDetalles(id);
@@ -46,14 +42,12 @@ public class PedidoController {
         }
     }
 
-    @PostMapping
-    // Crea un nuevo pedido. Si el pedido ya existe, retorna un código de estado
-    // 409 (Conflict).
-    public ResponseEntity<Pedido> postPedido(@RequestBody Pedido pedido) {
-        Pedido nuevo = pedidoService.guardar(pedido);
-        if (nuevo == null) {
-            return new ResponseEntity<>(HttpStatus.CONFLICT);
+    @GetMapping
+    public ResponseEntity<List<Pedido>> getPedidos() {
+        List<Pedido> pedidos = pedidoService.listarTodos();
+        if (pedidos.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
-        return new ResponseEntity<>(nuevo, HttpStatus.CREATED);
+        return new ResponseEntity<>(pedidos, HttpStatus.OK);
     }
 }
