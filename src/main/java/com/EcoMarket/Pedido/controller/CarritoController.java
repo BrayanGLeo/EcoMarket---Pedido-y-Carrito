@@ -20,13 +20,6 @@ public class CarritoController {
     @Autowired
     private CarritoService carritoService;
 
-    @GetMapping("/{clienteId}")
-    // Obtiene el carrito del cliente por su ID, si no existe, crea un nuevo carrito
-    public ResponseEntity<CarritoRespuestaDTO> getCarrito(@PathVariable Long clienteId) {
-        CarritoRespuestaDTO carrito = carritoService.obtenerCarritoPorCliente(clienteId);
-        return new ResponseEntity<>(carrito, HttpStatus.OK);
-    }
-
     @PostMapping("/{clienteId}/items")
     // Agrega un item al carrito del cliente. Si el producto ya existe, actualiza la
     // cantidad.
@@ -40,4 +33,13 @@ public class CarritoController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
+
+    @GetMapping("/{clienteId}")
+    // Obtiene el carrito del cliente por su ID, si no existe, crea un nuevo carrito
+    public ResponseEntity<CarritoRespuestaDTO> getCarrito(@PathVariable Long clienteId) {
+        CarritoRespuestaDTO carrito = carritoService.obtenerCarritoPorCliente(clienteId);
+        return new ResponseEntity<>(carrito, HttpStatus.OK);
+    }
+
+
 }
