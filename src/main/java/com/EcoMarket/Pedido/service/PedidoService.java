@@ -17,6 +17,7 @@ import com.EcoMarket.Pedido.dto.ProductoDTO;
 import com.EcoMarket.Pedido.model.ItemPedido;
 import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.repository.PedidoRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PedidoService {
@@ -61,6 +62,7 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @Transactional(readOnly = true)
     public Pedido pedidoxId(Long id) {
         return pedidoRepository.findById(id).orElse(null);
     }
