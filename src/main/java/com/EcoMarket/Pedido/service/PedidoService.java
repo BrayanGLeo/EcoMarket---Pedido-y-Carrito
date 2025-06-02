@@ -17,7 +17,6 @@ import com.EcoMarket.Pedido.dto.ProductoDTO;
 import com.EcoMarket.Pedido.model.ItemPedido;
 import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.repository.PedidoRepository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PedidoService {
@@ -62,7 +61,6 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
-    @Transactional(readOnly = true)
     public Pedido pedidoxId(Long id) {
         return pedidoRepository.findById(id).orElse(null);
     }
@@ -119,8 +117,7 @@ public class PedidoService {
         return itemsDTO;
     }
 
-    // Construye la respuesta final con todos los detalles del pedido, cliente y
-    // productos.
+    // Construye la respuesta final con todos los detalles del pedido
     private PedidoRespuestaDTO construirRespuestaFinal(Pedido pedido, ClienteDTO cliente,
             List<ItemPedidoDTO> productos) {
         PedidoRespuestaDTO response = new PedidoRespuestaDTO();

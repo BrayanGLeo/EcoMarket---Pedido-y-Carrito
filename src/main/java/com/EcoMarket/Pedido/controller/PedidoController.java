@@ -39,7 +39,7 @@ public class PedidoController {
     public ResponseEntity<PedidoRespuestaDTO> getPedidoById(@PathVariable Long id) {
         try {
             PedidoRespuestaDTO pedidoDTO = pedidoService.obtenerPedidoConDetalles(id);
-            if (pedidoDTO == null) { 
+            if (pedidoDTO == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity<>(pedidoDTO, HttpStatus.OK);
