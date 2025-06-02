@@ -69,10 +69,10 @@ public class CarritoService {
         return construirCarrito(carrito);
     }
 
-    // Este método calcula el total por item y el subtotal general.
+    // Calcula el total por item y el subtotal general.
     private CarritoRespuestaDTO construirCarrito(Carrito carrito) {
         List<ItemCarritoDTO> itemsDTO = new ArrayList<>();
-        double subTotalGeneral = 0; // El total de todo el carrito
+        double subTotalGeneral = 0; 
 
         for (ItemCarrito item : carrito.getProductos()) {
             String urlProducto = productoServiceUrl + "/api/productos/" + item.getProductoId();
@@ -84,11 +84,11 @@ public class CarritoService {
                 ItemCarritoDTO itemDTO = new ItemCarritoDTO();
                 itemDTO.setProducto(productoDTO);
                 itemDTO.setCantidad(item.getCantidad());
-                itemDTO.setTotalItem(totalDelItem); // Se asigna el total de la línea
+                itemDTO.setTotalItem(totalDelItem); 
 
                 itemsDTO.add(itemDTO);
 
-                subTotalGeneral += totalDelItem; // Se suma al total general
+                subTotalGeneral += totalDelItem; 
             }
         }
 

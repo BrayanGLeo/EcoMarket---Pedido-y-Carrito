@@ -37,7 +37,27 @@ public class PedidoService {
         return pedidoRepository.findAll();
     }
 
+    public boolean eliminar(Long id) {
+        if (pedidoRepository.existsById(id)) {
+            pedidoRepository.deleteById(id);
+            return true; 
+        }
+        return false; 
+    }
+
     public Pedido guardar(Pedido pedido) {
+        if (pedido.getProductos() == null || pedido.getProductos().isEmpty()) {
+            throw new IllegalArgumentException("El pedido debe tener al menos un producto.");
+        }
+
+        double totalCalculado = 0.0;
+        for (ItemPedido item : pedido.getProductos()) {
+            if (item.getPrecioUnitario() == null || item.getPrecioUnitario() < 0) {
+                throw new IllegalArgumentException("Cada item del pedido debe tener un precio unitario debe ser mayor 0.");
+            }
+            totalCalculado += item.getCantidad() * item.getPrecioUnitario();
+        }
+        pedido.setTotal(totalCalculado);
         return pedidoRepository.save(pedido);
     }
 
@@ -84,10 +104,13 @@ public class PedidoService {
             for (ItemPedido item : items) {
                 String urlProducto = productoServiceUrl + "/api/productos/" + item.getProductoId();
                 ProductoDTO productoDTO = restTemplate.getForObject(urlProducto, ProductoDTO.class);
-
+                
                 ItemPedidoDTO itemDTO = new ItemPedidoDTO();
-                itemDTO.setProducto(productoDTO);
+                if (productoDTO != null) { 
+                    itemDTO.setProducto(productoDTO);
+                }
                 itemDTO.setCantidad(item.getCantidad());
+                itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad()); 
                 itemsDTO.add(itemDTO);
             }
         }
