@@ -4,6 +4,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.EcoMarket.Pedido.client.ClienteClient;
+import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.ClienteDTO;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
@@ -19,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +34,10 @@ public class PedidoServiceTest {
     private PedidoRepository pedidoRepository;
 
     @Mock
-    private RestTemplate restTemplate;
+    private ProductoClient productoClient;
+
+    @Mock
+    private ClienteClient clienteClient;
 
     @InjectMocks
     private PedidoService pedidoService;
@@ -40,14 +46,10 @@ public class PedidoServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(pedidoService, "clienteServiceUrl", "http://localhost:8082");
-        ReflectionTestUtils.setField(pedidoService, "productoServiceUrl", "http://localhost:8081");
-
         pedidoMock = new Pedido();
         pedidoMock.setId(1L);
         pedidoMock.setClienteId(10L);
-        pedidoMock
-                .setFecha(java.time.LocalDateTime.ofInstant(new Date().toInstant(), java.time.ZoneId.systemDefault()));
+        pedidoMock.setFecha(LocalDateTime.now());
         pedidoMock.setTotal(150.0);
         pedidoMock.setEstado("PENDIENTE");
 
@@ -65,27 +67,30 @@ public class PedidoServiceTest {
         ClienteDTO clienteMock = new ClienteDTO();
         clienteMock.setId(10L);
         clienteMock.setNombre("Cliente de Prueba");
-        String clienteUrl = "http://localhost:8082/10";
-        when(restTemplate.getForObject(clienteUrl, ClienteDTO.class)).thenReturn(clienteMock);
+        when(clienteClient.getClienteById(10L)).thenReturn(clienteMock);
 
         when(pedidoRepository.findByClienteId(10L)).thenReturn(Collections.emptyList());
 
         ProductoDTO productoMock = new ProductoDTO();
         productoMock.setId(101L);
         productoMock.setNombre("Producto Test");
-        String productoUrl = "http://localhost:8081/api/productos/101";
-        when(restTemplate.getForObject(productoUrl, ProductoDTO.class)).thenReturn(productoMock);
+        productoMock.setPrecio(55.0);
+        List<Long> idsDeProductos = List.of(101L);
+        when(productoClient.findProductosByIds(idsDeProductos)).thenReturn(List.of(productoMock));
 
         PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
+
         assertNotNull(resultado);
         assertEquals(1L, resultado.getId());
         assertEquals("Cliente de Prueba", resultado.getCliente().getNombre());
         assertEquals(1, resultado.getProductos().size());
         assertEquals("Producto Test", resultado.getProductos().get(0).getProducto().getNombre());
+        assertEquals(50.0, resultado.getProductos().get(0).getProducto().getPrecio());
         assertEquals(3, resultado.getProductos().get(0).getCantidad());
+
         verify(pedidoRepository, times(1)).findById(1L);
-        verify(restTemplate, times(1)).getForObject(clienteUrl, ClienteDTO.class);
-        verify(restTemplate, times(1)).getForObject(productoUrl, ProductoDTO.class);
+        verify(clienteClient, times(1)).getClienteById(10L);
+        verify(productoClient, times(1)).findProductosByIds(idsDeProductos);
     }
 
     @Test
@@ -95,5 +100,8 @@ public class PedidoServiceTest {
         assertThrows(RuntimeException.class, () -> {
             pedidoService.obtenerPedidoConDetalles(99L);
         });
+
+        verifyNoInteractions(clienteClient);
+        verifyNoInteractions(productoClient);
     }
 }

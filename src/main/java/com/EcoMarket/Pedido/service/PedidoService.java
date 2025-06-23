@@ -2,6 +2,7 @@ package com.EcoMarket.Pedido.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.EcoMarket.Pedido.client.ClienteClient;
+import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.ClienteDTO;
 import com.EcoMarket.Pedido.dto.ItemPedidoDTO;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
@@ -25,13 +28,10 @@ public class PedidoService {
     private PedidoRepository pedidoRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
+    private ProductoClient productoClient;
 
-    @Value("${service.clientes.url}")
-    private String clienteServiceUrl;
-
-    @Value("${service.productos.url}")
-    private String productoServiceUrl;
+    @Autowired
+    private ClienteClient clienteClient;
 
     public List<Pedido> listarTodos() {
         return pedidoRepository.findAll();
@@ -81,8 +81,7 @@ public class PedidoService {
 
     // Obtiene los datos completos del cliente, incluyendo su historial de pedidos.
     private ClienteDTO obtenerDatosCompletosCliente(Long clienteId) {
-        String urlCliente = clienteServiceUrl + "/" + clienteId;
-        ClienteDTO clienteDTO = restTemplate.getForObject(urlCliente, ClienteDTO.class);
+        ClienteDTO clienteDTO = clienteClient.getClienteById(clienteId);
 
         if (clienteDTO != null) {
             List<Pedido> historial = pedidoRepository.findByClienteId(clienteId);
@@ -101,22 +100,35 @@ public class PedidoService {
 
     // Obtiene los detalles de cada producto en el pedido
     private List<ItemPedidoDTO> obtenerDetallesDeProductos(List<ItemPedido> items) {
-        List<ItemPedidoDTO> itemsDTO = new ArrayList<>();
-        if (items != null) {
-            for (ItemPedido item : items) {
-                String urlProducto = productoServiceUrl + "/api/productos/" + item.getProductoId();
-                ProductoDTO productoDTO = restTemplate.getForObject(urlProducto, ProductoDTO.class);
-
-                ItemPedidoDTO itemDTO = new ItemPedidoDTO();
-                if (productoDTO != null) {
-                    itemDTO.setProducto(productoDTO);
-                }
-                itemDTO.setCantidad(item.getCantidad());
-                itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad());
-                itemsDTO.add(itemDTO);
-            }
+        if (items == null || items.isEmpty()) {
+            return List.of();
         }
-        return itemsDTO;
+
+        List<Long> productoIds = items.stream()
+                .map(ItemPedido::getProductoId)
+                .collect(Collectors.toList());
+
+        List<ProductoDTO> productosDesdeApi = productoClient.findProductosByIds(productoIds);
+
+        Map<Long, ProductoDTO> mapaProductos = productosDesdeApi.stream()
+                .collect(Collectors.toMap(ProductoDTO::getId, producto -> producto));
+
+        return items.stream().map(item -> {
+            ProductoDTO productoDTO = mapaProductos.get(item.getProductoId());
+
+            ProductoDTO productoParaItem = new ProductoDTO();
+            if (productoDTO != null) {
+                productoParaItem.setId(productoDTO.getId());
+                productoParaItem.setNombre(productoDTO.getNombre());
+            }
+            productoParaItem.setPrecio(item.getPrecioUnitario());
+
+            ItemPedidoDTO itemDTO = new ItemPedidoDTO();
+            itemDTO.setProducto(productoParaItem);
+            itemDTO.setCantidad(item.getCantidad());
+            itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad());
+            return itemDTO;
+        }).collect(Collectors.toList());
     }
 
     // Construye la respuesta final con todos los detalles del pedido

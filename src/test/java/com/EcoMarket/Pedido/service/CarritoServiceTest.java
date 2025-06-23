@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.AgregarItemRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
@@ -21,6 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,25 +32,16 @@ public class CarritoServiceTest {
     private CarritoRepository carritoRepository;
 
     @Mock
-    private RestTemplate restTemplate;
+    private ProductoClient productoClient;
 
     @InjectMocks
     private CarritoService carritoService;
-
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(carritoService, "productoServiceUrl", "http://localhost:8081");
-    }
 
     @Test
     void testAgregarItemAlCarrito_ItemNuevo() {
         Long clienteId = 1L;
         Long productoId = 10L;
-        Carrito carritoExistente = new Carrito();
-        carritoExistente.setClienteId(clienteId);
-        carritoExistente.setId(100L);
-        carritoExistente.setProductos(new ArrayList<>());
-
+        Carrito carritoExistente = new Carrito(100L, clienteId, new ArrayList<>());
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carritoExistente));
 
         AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
@@ -59,7 +52,7 @@ public class CarritoServiceTest {
         productoMock.setId(productoId);
         productoMock.setNombre("Producto de Prueba");
         productoMock.setPrecio(50.0);
-        when(restTemplate.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(productoMock);
+        when(productoClient.findProductosByIds(anyList())).thenReturn(List.of(productoMock));
 
         carritoService.agregarItemAlCarrito(clienteId, itemRequest);
 
@@ -91,7 +84,7 @@ public class CarritoServiceTest {
 
         ProductoDTO productoMock = new ProductoDTO();
         productoMock.setPrecio(10.0);
-        when(restTemplate.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(productoMock);
+        when(productoClient.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(productoMock);
 
         carritoService.agregarItemAlCarrito(clienteId, itemRequest);
 
@@ -114,7 +107,7 @@ public class CarritoServiceTest {
         carrito.getProductos().add(itemExistente);
 
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
-        when(restTemplate.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(new ProductoDTO());
+        when(productoClient.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(new ProductoDTO());
 
         // Act
         carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
@@ -188,25 +181,25 @@ public class CarritoServiceTest {
         carrito.getProductos().add(new ItemCarrito(101L, 2));
         carrito.getProductos().add(new ItemCarrito(102L, 1));
 
-        when(carritoRepository.findByClienteId(1L)).thenReturn(Optional.of(carrito));
+        List<Long> idsDeProductos = List.of(101L, 102L);
 
         ProductoDTO producto1 = new ProductoDTO();
         producto1.setId(101L);
         producto1.setPrecio(10.0);
-        String urlProducto1 = "http://localhost:8081/api/productos/101";
-        when(restTemplate.getForObject(urlProducto1, ProductoDTO.class)).thenReturn(producto1);
 
         ProductoDTO producto2 = new ProductoDTO();
         producto2.setId(102L);
         producto2.setPrecio(25.0);
-        String urlProducto2 = "http://localhost:8081/api/productos/102";
-        when(restTemplate.getForObject(urlProducto2, ProductoDTO.class)).thenReturn(producto2);
 
+        when(productoClient.findProductosByIds(idsDeProductos)).thenReturn(List.of(producto1, producto2));
+
+        when(carritoRepository.findByClienteId(1L)).thenReturn(Optional.of(carrito));
         CarritoRespuestaDTO resultado = carritoService.obtenerCarritoPorCliente(1L);
 
         assertNotNull(resultado);
         assertEquals(2, resultado.getProductos().size());
         assertEquals(45.0, resultado.getSubTotal());
+        verify(productoClient, times(1)).findProductosByIds(idsDeProductos);
     }
 
 }
