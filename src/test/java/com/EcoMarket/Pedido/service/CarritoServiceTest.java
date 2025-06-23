@@ -36,7 +36,6 @@ public class CarritoServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Inyectamos manualmente la URL del servicio, ya que @Value no funciona en tests unitarios simples.
         ReflectionTestUtils.setField(carritoService, "productoServiceUrl", "http://localhost:8081");
     }
 
@@ -96,17 +95,17 @@ public class CarritoServiceTest {
         Long clienteId = 1L;
         Long productoId = 10L;
         ItemCarrito itemExistente = new ItemCarrito(productoId, 1);
-        
+
         Carrito carrito = new Carrito();
         carrito.setClienteId(clienteId);
         carrito.setId(100L);
         carrito.getProductos().add(itemExistente);
-        
+
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
-        
+
         AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
         itemRequest.setProductoId(productoId);
-        itemRequest.setCantidad(2); // Se agregarán 2 más
+        itemRequest.setCantidad(2);
 
         ProductoDTO productoMock = new ProductoDTO();
         productoMock.setPrecio(10.0);
@@ -116,7 +115,7 @@ public class CarritoServiceTest {
 
         ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
         verify(carritoRepository, times(1)).save(carritoCaptor.capture());
-        
+
         Carrito carritoGuardado = carritoCaptor.getValue();
         assertEquals(1, carritoGuardado.getProductos().size());
         assertEquals(3, carritoGuardado.getProductos().get(0).getCantidad());
