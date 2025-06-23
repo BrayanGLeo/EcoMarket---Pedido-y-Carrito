@@ -1,5 +1,6 @@
 package com.EcoMarket.Pedido.service;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,25 +38,6 @@ public class CarritoServiceTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(carritoService, "productoServiceUrl", "http://localhost:8081");
-    }
-
-    @Test
-    void testObtenerCarritoPorCliente_CuandoNoExisteCreaUnoNuevo() {
-        Long clienteId = 1L;
-        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
-
-        Carrito nuevoCarrito = new Carrito();
-        nuevoCarrito.setClienteId(clienteId);
-        nuevoCarrito.setId(100L);
-        when(carritoRepository.save(any(Carrito.class))).thenReturn(nuevoCarrito);
-
-        CarritoRespuestaDTO resultado = carritoService.obtenerCarritoPorCliente(clienteId);
-
-        assertNotNull(resultado);
-        assertEquals(clienteId, resultado.getClienteId());
-        assertTrue(resultado.getProductos().isEmpty());
-        verify(carritoRepository, times(1)).findByClienteId(clienteId);
-        verify(carritoRepository, times(1)).save(any(Carrito.class));
     }
 
     @Test
@@ -120,4 +102,53 @@ public class CarritoServiceTest {
         assertEquals(1, carritoGuardado.getProductos().size());
         assertEquals(3, carritoGuardado.getProductos().get(0).getCantidad());
     }
+
+    @Test
+    void testObtenerCarritoPorCliente_CuandoNoExisteCreaUnoNuevo() {
+        Long clienteId = 1L;
+        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
+
+        Carrito nuevoCarrito = new Carrito();
+        nuevoCarrito.setClienteId(clienteId);
+        nuevoCarrito.setId(100L);
+        when(carritoRepository.save(any(Carrito.class))).thenReturn(nuevoCarrito);
+
+        CarritoRespuestaDTO resultado = carritoService.obtenerCarritoPorCliente(clienteId);
+
+        assertNotNull(resultado);
+        assertEquals(clienteId, resultado.getClienteId());
+        assertTrue(resultado.getProductos().isEmpty());
+        verify(carritoRepository, times(1)).findByClienteId(clienteId);
+        verify(carritoRepository, times(1)).save(any(Carrito.class));
+    }
+
+    @Test
+    void testConstruirCarrito_CalculaSubTotalCorrectamente() {
+        // Given: Un carrito con múltiples items
+        Carrito carrito = new Carrito();
+        carrito.setClienteId(1L);
+        carrito.getProductos().add(new ItemCarrito(101L, 2));
+        carrito.getProductos().add(new ItemCarrito(102L, 1));
+
+        when(carritoRepository.findByClienteId(1L)).thenReturn(Optional.of(carrito));
+
+        ProductoDTO producto1 = new ProductoDTO();
+        producto1.setId(101L);
+        producto1.setPrecio(10.0);
+        String urlProducto1 = "http://localhost:8081/api/productos/101";
+        when(restTemplate.getForObject(urlProducto1, ProductoDTO.class)).thenReturn(producto1);
+
+        ProductoDTO producto2 = new ProductoDTO();
+        producto2.setId(102L);
+        producto2.setPrecio(25.0);
+        String urlProducto2 = "http://localhost:8081/api/productos/102";
+        when(restTemplate.getForObject(urlProducto2, ProductoDTO.class)).thenReturn(producto2);
+
+        CarritoRespuestaDTO resultado = carritoService.obtenerCarritoPorCliente(1L);
+
+        assertNotNull(resultado);
+        assertEquals(2, resultado.getProductos().size());
+        assertEquals(45.0, resultado.getSubTotal());
+    }
+
 }
