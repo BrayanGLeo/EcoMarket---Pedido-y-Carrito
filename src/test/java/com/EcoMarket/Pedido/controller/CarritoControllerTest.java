@@ -17,8 +17,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
-
 @WebMvcTest(CarritoController.class)
 public class CarritoControllerTest {
 
@@ -29,7 +27,7 @@ public class CarritoControllerTest {
     private CarritoService carritoService;
 
     @Autowired
-    private ObjectMapper objectMapper; // Para convertir objetos a JSON
+    private ObjectMapper objectMapper;
 
     @Test
     void testAgregarProducto_Exitoso() throws Exception {
@@ -44,7 +42,6 @@ public class CarritoControllerTest {
         when(carritoService.agregarItemAlCarrito(eq(clienteId), any(AgregarItemRespuestaDTO.class)))
                 .thenReturn(carritoActualizado);
 
-        // ACTUALIZAR URL AQUÍ
         mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(itemRequest)))
@@ -60,7 +57,6 @@ public class CarritoControllerTest {
         when(carritoService.agregarItemAlCarrito(eq(clienteId), any(AgregarItemRespuestaDTO.class)))
                 .thenThrow(new RuntimeException("Producto no existe"));
 
-        // ACTUALIZAR URL AQUÍ
         mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(itemRequest)))
@@ -75,7 +71,6 @@ public class CarritoControllerTest {
 
         when(carritoService.obtenerCarritoPorCliente(clienteId)).thenReturn(carritoDTO);
 
-        // ACTUALIZAR URL AQUÍ
         mockMvc.perform(get("/api/carrito/{clienteId}", clienteId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clienteId").value(clienteId));
