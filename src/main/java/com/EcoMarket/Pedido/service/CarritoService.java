@@ -30,6 +30,7 @@ public class CarritoService {
     @Value("${service.productos.url}")
     private String productoServiceUrl;
 
+    // Obtiene el carrito del cliente por su ID, o crea uno nuevo si no existe.
     @Transactional
     public CarritoRespuestaDTO obtenerCarritoPorCliente(Long clienteId) {
         Carrito carrito = carritoRepository.findByClienteId(clienteId).orElseGet(() -> {
@@ -62,6 +63,32 @@ public class CarritoService {
         }
 
         carritoRepository.save(carrito);
+        return construirCarrito(carrito);
+    }
+
+    // Elimina un item del carrito del cliente, reduciendo la cantidad.
+    @Transactional
+    public CarritoRespuestaDTO eliminarItemDelCarrito(Long clienteId, Long productoId, int cantidadAEliminar) {
+        Carrito carrito = carritoRepository.findByClienteId(clienteId)
+                .orElseThrow(() -> new RuntimeException("Carrito no encontrado para el cliente con ID: " + clienteId));
+
+        Optional<ItemCarrito> itemExistente = carrito.getProductos().stream()
+                .filter(item -> item.getProductoId().equals(productoId))
+                .findFirst();
+
+        if (itemExistente.isPresent()) {
+            ItemCarrito item = itemExistente.get();
+            int nuevaCantidad = item.getCantidad() - cantidadAEliminar;
+
+            if (nuevaCantidad > 0) {
+                item.setCantidad(nuevaCantidad);
+            } else {
+                carrito.getProductos().remove(item);
+            }
+            carritoRepository.save(carrito);
+        } else {
+            throw new RuntimeException("Producto no encontrado en el carrito");
+        }
         return construirCarrito(carrito);
     }
 

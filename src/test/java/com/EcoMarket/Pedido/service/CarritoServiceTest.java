@@ -104,6 +104,65 @@ public class CarritoServiceTest {
     }
 
     @Test
+    void testEliminarItemDelCarrito_ReduceCantidadCorrectamente() {
+        Long clienteId = 1L;
+        Long productoId = 10L;
+        ItemCarrito itemExistente = new ItemCarrito(productoId, 5);
+
+        Carrito carrito = new Carrito();
+        carrito.setClienteId(clienteId);
+        carrito.getProductos().add(itemExistente);
+
+        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
+        when(restTemplate.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(new ProductoDTO());
+
+        // Act
+        carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
+
+        // Assert
+        ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
+        verify(carritoRepository, times(1)).save(carritoCaptor.capture());
+
+        Carrito carritoGuardado = carritoCaptor.getValue();
+        assertEquals(1, carritoGuardado.getProductos().size());
+        assertEquals(3, carritoGuardado.getProductos().get(0).getCantidad());
+    }
+
+    @Test
+    void testEliminarItemDelCarrito_EliminaItemPorCompleto() {
+        Long clienteId = 1L;
+        Long productoId = 10L;
+        ItemCarrito itemExistente = new ItemCarrito(productoId, 2);
+
+        Carrito carrito = new Carrito();
+        carrito.setClienteId(clienteId);
+        carrito.getProductos().add(itemExistente);
+        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
+
+        carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
+
+        ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
+        verify(carritoRepository, times(1)).save(carritoCaptor.capture());
+
+        Carrito carritoGuardado = carritoCaptor.getValue();
+        assertTrue(carritoGuardado.getProductos().isEmpty());
+    }
+
+    @Test
+    void testEliminarItemDelCarrito_CarritoNoEncontrado() {
+        Long clienteId = 1L;
+        Long productoId = 10L;
+        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            carritoService.eliminarItemDelCarrito(clienteId, productoId, 1);
+        });
+
+        assertEquals("Carrito no encontrado para el cliente con ID: " + clienteId, exception.getMessage());
+        verify(carritoRepository, never()).save(any());
+    }
+
+    @Test
     void testObtenerCarritoPorCliente_CuandoNoExisteCreaUnoNuevo() {
         Long clienteId = 1L;
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
@@ -124,7 +183,6 @@ public class CarritoServiceTest {
 
     @Test
     void testConstruirCarrito_CalculaSubTotalCorrectamente() {
-        // Given: Un carrito con múltiples items
         Carrito carrito = new Carrito();
         carrito.setClienteId(1L);
         carrito.getProductos().add(new ItemCarrito(101L, 2));

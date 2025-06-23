@@ -1,7 +1,6 @@
 package com.EcoMarket.Pedido.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -64,6 +63,36 @@ public class CarritoControllerTest {
     }
 
     @Test
+    void testEliminarProductoDelCarrito_Exitoso() throws Exception {
+        Long clienteId = 1L;
+        Long productoId = 202L;
+        int cantidad = 1;
+
+        CarritoRespuestaDTO carritoActualizado = new CarritoRespuestaDTO();
+        carritoActualizado.setClienteId(clienteId);
+
+        when(carritoService.eliminarItemDelCarrito(eq(clienteId), eq(productoId), eq(cantidad)))
+                .thenReturn(carritoActualizado);
+
+        mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId)
+                .param("cantidad", String.valueOf(cantidad)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clienteId").value(clienteId));
+    }
+
+    @Test
+    void testEliminarProductoDelCarrito_Fallo() throws Exception {
+        Long clienteId = 1L;
+        Long productoId = 202L;
+
+        when(carritoService.eliminarItemDelCarrito(eq(clienteId), eq(productoId), anyInt()))
+                .thenThrow(new RuntimeException("Error al eliminar item"));
+
+        mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void testMostarCarrito_RetornaCarritoExistente() throws Exception {
         Long clienteId = 1L;
         CarritoRespuestaDTO carritoDTO = new CarritoRespuestaDTO();
@@ -75,5 +104,4 @@ public class CarritoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clienteId").value(clienteId));
     }
-
 }
