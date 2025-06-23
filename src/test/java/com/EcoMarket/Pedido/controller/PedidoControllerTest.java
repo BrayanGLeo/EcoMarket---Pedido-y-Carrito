@@ -4,14 +4,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-import com.EcoMarket.Pedido.client.ClienteClient; // <-- IMPORTAR
-import com.EcoMarket.Pedido.client.ProductoClient; // <-- IMPORTAR
+import com.EcoMarket.Pedido.client.ClienteClient;
+import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
 import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.service.PedidoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +54,20 @@ public class PedidoControllerTest {
     }
 
     @Test
+    void testEndpointGetRegistration() throws Exception {
+        // Este es un test de diagnóstico para el endpoint GET.
+        // No necesita cuerpo, ni CSRF, es la prueba más simple posible.
+
+        // Configuramos el mock del servicio para que devuelva una lista vacía
+        when(pedidoService.listarTodos()).thenReturn(Collections.emptyList());
+
+        // Ejecutamos la petición y esperamos un 204 No Content, como está en tu
+        // controlador
+        mockMvc.perform(get("/api/pedidos"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void testPostCrearPedido_CreadoExitosamente() throws Exception {
         Pedido pedidoACrear = new Pedido();
         pedidoACrear.setClienteId(1L);
@@ -63,8 +79,10 @@ public class PedidoControllerTest {
         when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(pedidoGuardado);
 
         mockMvc.perform(post("/api/pedidos")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(pedidoACrear)))
+                .andDo(print())
                 .andExpect(status().isCreated());
     }
 
