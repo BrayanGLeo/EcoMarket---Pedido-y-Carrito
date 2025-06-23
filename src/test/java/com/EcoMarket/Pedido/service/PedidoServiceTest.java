@@ -1,5 +1,6 @@
 package com.EcoMarket.Pedido.service;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,13 +46,15 @@ public class PedidoServiceTest {
         pedidoMock = new Pedido();
         pedidoMock.setId(1L);
         pedidoMock.setClienteId(10L);
-        pedidoMock.setFecha(new Date());
+        pedidoMock
+                .setFecha(java.time.LocalDateTime.ofInstant(new Date().toInstant(), java.time.ZoneId.systemDefault()));
         pedidoMock.setTotal(150.0);
         pedidoMock.setEstado("PENDIENTE");
-        
+
         ItemPedido item = new ItemPedido();
         item.setProductoId(101L);
         item.setCantidad(3);
+        item.setPrecioUnitario(50.0);
         pedidoMock.setProductos(List.of(item));
     }
 
@@ -62,9 +65,9 @@ public class PedidoServiceTest {
         ClienteDTO clienteMock = new ClienteDTO();
         clienteMock.setId(10L);
         clienteMock.setNombre("Cliente de Prueba");
-        String clienteUrl = "http://localhost:8082/api/clientes/10";
+        String clienteUrl = "http://localhost:8082/10";
         when(restTemplate.getForObject(clienteUrl, ClienteDTO.class)).thenReturn(clienteMock);
-        
+
         when(pedidoRepository.findByClienteId(10L)).thenReturn(Collections.emptyList());
 
         ProductoDTO productoMock = new ProductoDTO();
@@ -72,9 +75,8 @@ public class PedidoServiceTest {
         productoMock.setNombre("Producto Test");
         String productoUrl = "http://localhost:8081/api/productos/101";
         when(restTemplate.getForObject(productoUrl, ProductoDTO.class)).thenReturn(productoMock);
-        
-        PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
 
+        PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
         assertNotNull(resultado);
         assertEquals(1L, resultado.getId());
         assertEquals("Cliente de Prueba", resultado.getCliente().getNombre());
@@ -85,7 +87,7 @@ public class PedidoServiceTest {
         verify(restTemplate, times(1)).getForObject(clienteUrl, ClienteDTO.class);
         verify(restTemplate, times(1)).getForObject(productoUrl, ProductoDTO.class);
     }
-    
+
     @Test
     void testObtenerPedidoConDetalles_PedidoNoEncontrado() {
         when(pedidoRepository.findById(anyLong())).thenReturn(Optional.empty());

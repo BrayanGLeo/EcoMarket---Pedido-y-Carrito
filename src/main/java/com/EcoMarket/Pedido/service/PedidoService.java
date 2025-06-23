@@ -40,12 +40,13 @@ public class PedidoService {
     public boolean eliminar(Long id) {
         if (pedidoRepository.existsById(id)) {
             pedidoRepository.deleteById(id);
-            return true; 
+            return true;
         }
-        return false; 
+        return false;
     }
 
-    public Pedido guardar(Pedido pedido) {
+    // Guarda un nuevo pedido, valida que tenga productos y calcula el total.
+    public Pedido guardarPedido(Pedido pedido) {
         if (pedido.getProductos() == null || pedido.getProductos().isEmpty()) {
             throw new IllegalArgumentException("El pedido debe tener al menos un producto.");
         }
@@ -53,7 +54,8 @@ public class PedidoService {
         double totalCalculado = 0.0;
         for (ItemPedido item : pedido.getProductos()) {
             if (item.getPrecioUnitario() == null || item.getPrecioUnitario() < 0) {
-                throw new IllegalArgumentException("Cada item del pedido debe tener un precio unitario debe ser mayor 0.");
+                throw new IllegalArgumentException(
+                        "Cada item del pedido debe tener un precio unitario debe ser mayor 0.");
             }
             totalCalculado += item.getCantidad() * item.getPrecioUnitario();
         }
@@ -104,13 +106,13 @@ public class PedidoService {
             for (ItemPedido item : items) {
                 String urlProducto = productoServiceUrl + "/api/productos/" + item.getProductoId();
                 ProductoDTO productoDTO = restTemplate.getForObject(urlProducto, ProductoDTO.class);
-                
+
                 ItemPedidoDTO itemDTO = new ItemPedidoDTO();
-                if (productoDTO != null) { 
+                if (productoDTO != null) {
                     itemDTO.setProducto(productoDTO);
                 }
                 itemDTO.setCantidad(item.getCantidad());
-                itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad()); 
+                itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad());
                 itemsDTO.add(itemDTO);
             }
         }

@@ -26,8 +26,8 @@ public class PedidoController {
 
     // Crea un nuevo pedido
     @PostMapping
-    public ResponseEntity<Pedido> postPedido(@RequestBody Pedido pedido) {
-        Pedido nuevo = pedidoService.guardar(pedido);
+    public ResponseEntity<Pedido> crearPedido(@RequestBody Pedido pedido) {
+        Pedido nuevo = pedidoService.guardarPedido(pedido);
         if (nuevo == null) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }
@@ -36,7 +36,7 @@ public class PedidoController {
 
     // Obtiene un pedido por ID con detalles
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoRespuestaDTO> getPedidoById(@PathVariable Long id) {
+    public ResponseEntity<PedidoRespuestaDTO> pedidoPorId(@PathVariable Long id) {
         try {
             PedidoRespuestaDTO pedidoDTO = pedidoService.obtenerPedidoConDetalles(id);
             if (pedidoDTO == null) {
@@ -52,7 +52,7 @@ public class PedidoController {
 
     // Obtiene todos los pedidos
     @GetMapping
-    public ResponseEntity<List<Pedido>> getPedidos() {
+    public ResponseEntity<List<Pedido>> obtenerTodosLosPedidos() {
         List<Pedido> pedidos = pedidoService.listarTodos();
         if (pedidos.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -62,12 +62,11 @@ public class PedidoController {
 
     // Elimina un pedido por ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePedido(@PathVariable Long id) {
-        boolean eliminado = pedidoService.eliminar(id); 
+    public ResponseEntity<Void> eliminarPedido(@PathVariable Long id) {
+        boolean eliminado = pedidoService.eliminar(id);
         if (!eliminado) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); 
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); 
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
-

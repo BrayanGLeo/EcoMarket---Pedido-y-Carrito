@@ -1,5 +1,6 @@
 package com.EcoMarket.Pedido.controller;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -31,26 +32,36 @@ public class PedidoControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void testGetPedidos_CuandoHayPedidos() throws Exception {
-        when(pedidoService.listarTodos()).thenReturn(List.of(new Pedido()));
+    void testPostCrearPedido_CreadoExitosamente() throws Exception {
+        Pedido pedidoACrear = new Pedido();
+        pedidoACrear.setClienteId(1L);
 
-        mockMvc.perform(get("/api/pedidos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0]").exists());
+        Pedido pedidoGuardado = new Pedido();
+        pedidoGuardado.setId(100L);
+        pedidoGuardado.setClienteId(1L);
+
+        when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(pedidoGuardado);
+
+        mockMvc.perform(post("/api/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(pedidoACrear)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(100L));
     }
 
-
     @Test
-    void testGetPedidos_CuandoNoHayPedidos() throws Exception {
-        when(pedidoService.listarTodos()).thenReturn(Collections.emptyList());
+    void testPostCrearPedido_Conflicto() throws Exception {
+        Pedido pedidoACrear = new Pedido();
+        when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(null);
 
-        mockMvc.perform(get("/api/pedidos"))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(post("/api/pedidos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(pedidoACrear)))
+                .andExpect(status().isConflict());
     }
 
     @Test
-    void testGetPedidoById_Encontrado() throws Exception {
+    void testGetPedidoPorId_Encontrado() throws Exception {
         Long pedidoId = 1L;
         PedidoRespuestaDTO dto = new PedidoRespuestaDTO();
         dto.setId(pedidoId);
@@ -62,7 +73,7 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testGetPedidoById_NoEncontrado() throws Exception {
+    void testGetPedidoPorId_NoEncontrado() throws Exception {
         Long pedidoId = 99L;
         when(pedidoService.obtenerPedidoConDetalles(pedidoId)).thenThrow(new RuntimeException("Pedido no encontrado"));
 
@@ -71,31 +82,39 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testPostPedido_CreadoExitosamente() throws Exception {
-        Pedido pedidoACrear = new Pedido();
-        pedidoACrear.setClienteId(1L);
+    void testGetObtenerTodosLosPedidos_CuandoHayPedidos() throws Exception {
+        when(pedidoService.listarTodos()).thenReturn(List.of(new Pedido()));
 
-        Pedido pedidoGuardado = new Pedido();
-        pedidoGuardado.setId(100L);
-        pedidoGuardado.setClienteId(1L);
-
-        when(pedidoService.guardar(any(Pedido.class))).thenReturn(pedidoGuardado);
-        
-        mockMvc.perform(post("/api/pedidos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(pedidoACrear)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(100L));
+        mockMvc.perform(get("/api/pedidos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0]").exists());
     }
 
     @Test
-    void testPostPedido_Conflicto() throws Exception {
-        Pedido pedidoACrear = new Pedido();
-        when(pedidoService.guardar(any(Pedido.class))).thenReturn(null);
+    void testGetObtenerTodosLosPedidos_CuandoNoHayPedidos() throws Exception {
+        when(pedidoService.listarTodos()).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(post("/api/pedidos")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(pedidoACrear)))
-                .andExpect(status().isConflict());
+        mockMvc.perform(get("/api/pedidos"))
+                .andExpect(status().isNoContent());
     }
+
+    @Test
+    void testEliminarPedido_Eliminado() throws Exception {
+        Long pedidoId = 5L;
+        when(pedidoService.eliminar(pedidoId)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void testEliminarPedido_NoEncontrado() throws Exception {
+        Long pedidoId = 999L;
+        when(pedidoService.eliminar(pedidoId)).thenReturn(false);
+
+        mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
+                .andExpect(status().isNotFound());
+    }
+
 }

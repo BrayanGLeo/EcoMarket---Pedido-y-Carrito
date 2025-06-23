@@ -14,15 +14,16 @@ import com.EcoMarket.Pedido.dto.AgregarItemRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.service.CarritoService;
 
-@RestController 
-@RequestMapping("/api/carritos")
+@RestController
+@RequestMapping("/api/carrito")
 public class CarritoController {
+
     @Autowired
     private CarritoService carritoService;
 
     // Agrega un item al carrito del cliente
-    @PostMapping("/{clienteId}/items")
-    public ResponseEntity<CarritoRespuestaDTO> addItem(@PathVariable Long clienteId,
+    @PostMapping("/{clienteId}/productos")
+    public ResponseEntity<CarritoRespuestaDTO> agregarProductos(@PathVariable Long clienteId,
             @RequestBody AgregarItemRespuestaDTO itemRequest) {
         try {
             CarritoRespuestaDTO carritoActualizado = carritoService.agregarItemAlCarrito(clienteId, itemRequest);
@@ -33,9 +34,10 @@ public class CarritoController {
     }
 
     // Obtiene el carrito del cliente por su ID
-    @GetMapping("/{clienteId}")
-    public ResponseEntity<CarritoRespuestaDTO> getCarrito(@PathVariable Long clienteId) {
+    @GetMapping("{clienteId}")
+    public ResponseEntity<CarritoRespuestaDTO> mostrarCarrito(@PathVariable Long clienteId) {
         CarritoRespuestaDTO carrito = carritoService.obtenerCarritoPorCliente(clienteId);
-        return new ResponseEntity<>(carrito, HttpStatus.OK);
+        return ResponseEntity.ok(carrito);
     }
+
 }

@@ -33,7 +33,6 @@ public class CarritoService {
     @Transactional
     public CarritoRespuestaDTO obtenerCarritoPorCliente(Long clienteId) {
         Carrito carrito = carritoRepository.findByClienteId(clienteId).orElseGet(() -> {
-            // Si no existe un carrito para el cliente, se crea uno nuevo
             Carrito nuevoCarrito = new Carrito();
             nuevoCarrito.setClienteId(clienteId);
             return carritoRepository.save(nuevoCarrito);
@@ -42,9 +41,9 @@ public class CarritoService {
         return construirCarrito(carrito);
     }
 
+    // Agrega un item al carrito del cliente, o actualiza la cantidad si ya existe.
     @Transactional
     public CarritoRespuestaDTO agregarItemAlCarrito(Long clienteId, AgregarItemRespuestaDTO itemRequest) {
-        // Obtiene o crear el carrito
         Optional<Carrito> carritoOpt = carritoRepository.findByClienteId(clienteId);
         Carrito carrito = carritoOpt.orElseGet(() -> {
             Carrito nuevoCarrito = new Carrito();
@@ -52,19 +51,16 @@ public class CarritoService {
             return nuevoCarrito;
         });
 
-        // Buscar si el item ya existe en el carrito
         Optional<ItemCarrito> itemExistente = carrito.getProductos().stream()
                 .filter(item -> item.getProductoId().equals(itemRequest.getProductoId()))
                 .findFirst();
 
-        // Actualiza la cantidad o añade un nuevo item
         if (itemExistente.isPresent()) {
             itemExistente.get().setCantidad(itemExistente.get().getCantidad() + itemRequest.getCantidad());
         } else {
             carrito.getProductos().add(new ItemCarrito(itemRequest.getProductoId(), itemRequest.getCantidad()));
         }
 
-        // Guarda los cambios y devuelve la respuesta
         carritoRepository.save(carrito);
         return construirCarrito(carrito);
     }
@@ -72,7 +68,7 @@ public class CarritoService {
     // Calcula el total por item y el subtotal general.
     private CarritoRespuestaDTO construirCarrito(Carrito carrito) {
         List<ItemCarritoDTO> itemsDTO = new ArrayList<>();
-        double subTotalGeneral = 0; 
+        double subTotalGeneral = 0;
 
         for (ItemCarrito item : carrito.getProductos()) {
             String urlProducto = productoServiceUrl + "/api/productos/" + item.getProductoId();
@@ -84,11 +80,11 @@ public class CarritoService {
                 ItemCarritoDTO itemDTO = new ItemCarritoDTO();
                 itemDTO.setProducto(productoDTO);
                 itemDTO.setCantidad(item.getCantidad());
-                itemDTO.setTotalItem(totalDelItem); 
+                itemDTO.setTotalItem(totalDelItem);
 
                 itemsDTO.add(itemDTO);
 
-                subTotalGeneral += totalDelItem; 
+                subTotalGeneral += totalDelItem;
             }
         }
 
@@ -96,7 +92,7 @@ public class CarritoService {
         response.setId(carrito.getId());
         response.setClienteId(carrito.getClienteId());
         response.setProductos(itemsDTO);
-        response.setSubTotal(subTotalGeneral); // Se asigna el total de todo el carrito
+        response.setSubTotal(subTotalGeneral);
 
         return response;
     }
