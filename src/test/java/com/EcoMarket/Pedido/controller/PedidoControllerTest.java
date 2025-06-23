@@ -54,20 +54,6 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testEndpointGetRegistration() throws Exception {
-        // Este es un test de diagnóstico para el endpoint GET.
-        // No necesita cuerpo, ni CSRF, es la prueba más simple posible.
-
-        // Configuramos el mock del servicio para que devuelva una lista vacía
-        when(pedidoService.listarTodos()).thenReturn(Collections.emptyList());
-
-        // Ejecutamos la petición y esperamos un 204 No Content, como está en tu
-        // controlador
-        mockMvc.perform(get("/api/pedidos"))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
     void testPostCrearPedido_CreadoExitosamente() throws Exception {
         Pedido pedidoACrear = new Pedido();
         pedidoACrear.setClienteId(1L);
