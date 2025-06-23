@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "catalogodb", url = "jdbc:mysql://localhost:3306/catalogodb?serverTimezone=UTC")
+@FeignClient(name = "producto-service", url = "${service.productos.url}")
 public interface ProductoClient {
 
-    @GetMapping("/api/productos/id")
-    List<ProductoDTO> findProductosByIds(@RequestParam("id") List<Long> Producto);
-
-    Object getForObject(String anyString, Class<ProductoDTO> eq);
+    @GetMapping("/api/productos/by-ids")
+    List<ProductoDTO> findProductosByIds(@RequestParam("ids") List<Long> ids);
 }

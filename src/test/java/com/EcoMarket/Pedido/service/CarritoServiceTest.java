@@ -11,15 +11,12 @@ import com.EcoMarket.Pedido.dto.ProductoDTO;
 import com.EcoMarket.Pedido.model.Carrito;
 import com.EcoMarket.Pedido.model.ItemCarrito;
 import com.EcoMarket.Pedido.repository.CarritoRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +81,6 @@ public class CarritoServiceTest {
 
         ProductoDTO productoMock = new ProductoDTO();
         productoMock.setPrecio(10.0);
-        when(productoClient.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(productoMock);
 
         carritoService.agregarItemAlCarrito(clienteId, itemRequest);
 
@@ -107,7 +103,6 @@ public class CarritoServiceTest {
         carrito.getProductos().add(itemExistente);
 
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
-        when(productoClient.getForObject(anyString(), eq(ProductoDTO.class))).thenReturn(new ProductoDTO());
 
         // Act
         carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
