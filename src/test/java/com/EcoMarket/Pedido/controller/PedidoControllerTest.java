@@ -43,7 +43,7 @@ public class PedidoControllerTest {
     private ClienteClient clienteClient;
 
     @InjectMocks
-    private CarritoController pedidoController;
+    private PedidoController pedidoController;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
