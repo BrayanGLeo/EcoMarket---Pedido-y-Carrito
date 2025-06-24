@@ -9,7 +9,7 @@ import lombok.Data;
 public class PedidoRespuestaDTO {
     private Long id;
     private ClienteDTO cliente;
-    private List<ItemPedidoDTO> productos;
+    private List<ProductoPedidoDTO> productos;
     private LocalDateTime fecha;
     private Double total;
     private String estado;

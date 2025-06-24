@@ -32,7 +32,7 @@ public class Pedido {
 
     @ElementCollection
     @CollectionTable(name = "pedido_items", joinColumns = @JoinColumn(name = "pedido_id"))
-    private List<ItemPedido> productos;
+    private List<ProductoPedido> productos;
 
     @Column(nullable = false)
     private LocalDateTime fecha;

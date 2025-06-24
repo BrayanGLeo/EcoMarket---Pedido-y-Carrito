@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 import com.EcoMarket.Pedido.client.ClienteClient;
 import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.ClienteDTO;
-import com.EcoMarket.Pedido.dto.ItemPedidoDTO;
+import com.EcoMarket.Pedido.dto.ProductoPedidoDTO;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.PedidoResumidoDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
-import com.EcoMarket.Pedido.model.ItemPedido;
+import com.EcoMarket.Pedido.model.ProductoPedido;
 import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.repository.PedidoRepository;
 
@@ -30,11 +30,11 @@ public class PedidoService {
     @Autowired
     private ClienteClient clienteClient;
 
-    public List<Pedido> listarTodos() {
+    public List<Pedido> listarTodosPedidos() {
         return pedidoRepository.findAll();
     }
 
-    public boolean eliminar(Long id) {
+    public boolean eliminarPedido(Long id) {
         if (pedidoRepository.existsById(id)) {
             pedidoRepository.deleteById(id);
             return true;
@@ -49,7 +49,7 @@ public class PedidoService {
         }
 
         double totalCalculado = 0.0;
-        for (ItemPedido item : pedido.getProductos()) {
+        for (ProductoPedido item : pedido.getProductos()) {
             if (item.getPrecioUnitario() == null || item.getPrecioUnitario() < 0) {
                 throw new IllegalArgumentException(
                         "Cada item del pedido debe tener un precio unitario debe ser mayor 0.");
@@ -60,18 +60,18 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
-    public Pedido pedidoxId(Long id) {
+    public Pedido buscarPedidoxId(Long id) {
         return pedidoRepository.findById(id).orElse(null);
     }
 
     public PedidoRespuestaDTO obtenerPedidoConDetalles(Long id) {
-        Pedido pedido = this.pedidoxId(id);
+        Pedido pedido = this.buscarPedidoxId(id);
         if (pedido == null) {
             throw new RuntimeException("Pedido no encontrado con id: " + id);
         }
 
         ClienteDTO clienteCompleto = obtenerDatosCompletosCliente(pedido.getClienteId());
-        List<ItemPedidoDTO> productosCompletos = obtenerDetallesDeProductos(pedido.getProductos());
+        List<ProductoPedidoDTO> productosCompletos = obtenerDetallesDeProductos(pedido.getProductos());
 
         return construirRespuestaFinal(pedido, clienteCompleto, productosCompletos);
     }
@@ -96,13 +96,13 @@ public class PedidoService {
     }
 
     // Obtiene los detalles de cada producto en el pedido
-    private List<ItemPedidoDTO> obtenerDetallesDeProductos(List<ItemPedido> items) {
+    private List<ProductoPedidoDTO> obtenerDetallesDeProductos(List<ProductoPedido> items) {
         if (items == null || items.isEmpty()) {
             return List.of();
         }
 
         List<Long> productoIds = items.stream()
-                .map(ItemPedido::getProductoId)
+                .map(ProductoPedido::getProductoId)
                 .collect(Collectors.toList());
 
         List<ProductoDTO> productosDesdeApi = productoClient.findProductosByIds(productoIds);
@@ -120,7 +120,7 @@ public class PedidoService {
             }
             productoParaItem.setPrecio(item.getPrecioUnitario());
 
-            ItemPedidoDTO itemDTO = new ItemPedidoDTO();
+            ProductoPedidoDTO itemDTO = new ProductoPedidoDTO();
             itemDTO.setProducto(productoParaItem);
             itemDTO.setCantidad(item.getCantidad());
             itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad());
@@ -130,7 +130,7 @@ public class PedidoService {
 
     // Construye la respuesta final con todos los detalles del pedido
     private PedidoRespuestaDTO construirRespuestaFinal(Pedido pedido, ClienteDTO cliente,
-            List<ItemPedidoDTO> productos) {
+            List<ProductoPedidoDTO> productos) {
         PedidoRespuestaDTO response = new PedidoRespuestaDTO();
         response.setId(pedido.getId());
         response.setCliente(cliente);

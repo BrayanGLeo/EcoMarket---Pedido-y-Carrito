@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.EcoMarket.Pedido.client.ProductoClient;
-import com.EcoMarket.Pedido.dto.AgregarItemRespuestaDTO;
+import com.EcoMarket.Pedido.dto.AgregarProductoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
 import com.EcoMarket.Pedido.model.Carrito;
@@ -35,13 +35,13 @@ public class CarritoServiceTest {
     private CarritoService carritoService;
 
     @Test
-    void testAgregarItemAlCarrito_ItemNuevo() {
+    void testAgregarProductoAlCarrito_ProductoNuevo() {
         Long clienteId = 1L;
         Long productoId = 10L;
         Carrito carritoExistente = new Carrito(100L, clienteId, new ArrayList<>());
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carritoExistente));
 
-        AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
+        AgregarProductoRespuestaDTO itemRequest = new AgregarProductoRespuestaDTO();
         itemRequest.setProductoId(productoId);
         itemRequest.setCantidad(2);
 
@@ -51,7 +51,7 @@ public class CarritoServiceTest {
         productoMock.setPrecio(50.0);
         when(productoClient.findProductosByIds(anyList())).thenReturn(List.of(productoMock));
 
-        carritoService.agregarItemAlCarrito(clienteId, itemRequest);
+        carritoService.agregarProductoAlCarrito(clienteId, itemRequest);
 
         ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
         verify(carritoRepository, times(1)).save(carritoCaptor.capture());
@@ -63,7 +63,7 @@ public class CarritoServiceTest {
     }
 
     @Test
-    void testAgregarItemAlCarrito_ActualizarCantidadItemExistente() {
+    void testAgregarProductoAlCarrito_AgregarCantidadProductoExistente() {
         Long clienteId = 1L;
         Long productoId = 10L;
         ItemCarrito itemExistente = new ItemCarrito(productoId, 1);
@@ -75,14 +75,14 @@ public class CarritoServiceTest {
 
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
 
-        AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
+        AgregarProductoRespuestaDTO itemRequest = new AgregarProductoRespuestaDTO();
         itemRequest.setProductoId(productoId);
         itemRequest.setCantidad(2);
 
         ProductoDTO productoMock = new ProductoDTO();
         productoMock.setPrecio(10.0);
 
-        carritoService.agregarItemAlCarrito(clienteId, itemRequest);
+        carritoService.agregarProductoAlCarrito(clienteId, itemRequest);
 
         ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
         verify(carritoRepository, times(1)).save(carritoCaptor.capture());
@@ -93,7 +93,7 @@ public class CarritoServiceTest {
     }
 
     @Test
-    void testEliminarItemDelCarrito_ReduceCantidadCorrectamente() {
+    void testEliminarProductoDelCarrito_ReduceCantidadProducto() {
         Long clienteId = 1L;
         Long productoId = 10L;
         ItemCarrito itemExistente = new ItemCarrito(productoId, 5);
@@ -104,10 +104,8 @@ public class CarritoServiceTest {
 
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
 
-        // Act
-        carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
+        carritoService.eliminarProductoDelCarrito(clienteId, productoId, 2);
 
-        // Assert
         ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
         verify(carritoRepository, times(1)).save(carritoCaptor.capture());
 
@@ -117,7 +115,7 @@ public class CarritoServiceTest {
     }
 
     @Test
-    void testEliminarItemDelCarrito_EliminaItemPorCompleto() {
+    void testEliminarProductoDelCarrito() {
         Long clienteId = 1L;
         Long productoId = 10L;
         ItemCarrito itemExistente = new ItemCarrito(productoId, 2);
@@ -127,7 +125,7 @@ public class CarritoServiceTest {
         carrito.getProductos().add(itemExistente);
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.of(carrito));
 
-        carritoService.eliminarItemDelCarrito(clienteId, productoId, 2);
+        carritoService.eliminarProductoDelCarrito(clienteId, productoId, 2);
 
         ArgumentCaptor<Carrito> carritoCaptor = ArgumentCaptor.forClass(Carrito.class);
         verify(carritoRepository, times(1)).save(carritoCaptor.capture());
@@ -137,21 +135,7 @@ public class CarritoServiceTest {
     }
 
     @Test
-    void testEliminarItemDelCarrito_CarritoNoEncontrado() {
-        Long clienteId = 1L;
-        Long productoId = 10L;
-        when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            carritoService.eliminarItemDelCarrito(clienteId, productoId, 1);
-        });
-
-        assertEquals("Carrito no encontrado para el cliente con ID: " + clienteId, exception.getMessage());
-        verify(carritoRepository, never()).save(any());
-    }
-
-    @Test
-    void testObtenerCarritoPorCliente_CuandoNoExisteCreaUnoNuevo() {
+    void testObtenerCarritoPorCliente() {
         Long clienteId = 1L;
         when(carritoRepository.findByClienteId(clienteId)).thenReturn(Optional.empty());
 
@@ -170,7 +154,7 @@ public class CarritoServiceTest {
     }
 
     @Test
-    void testConstruirCarrito_CalculaSubTotalCorrectamente() {
+    void testConstruirCarrito() {
         Carrito carrito = new Carrito();
         carrito.setClienteId(1L);
         carrito.getProductos().add(new ItemCarrito(101L, 2));

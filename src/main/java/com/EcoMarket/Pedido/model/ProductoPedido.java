@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ItemPedido {
+public class ProductoPedido {
 
     @Column(nullable = false)
     private Long productoId;

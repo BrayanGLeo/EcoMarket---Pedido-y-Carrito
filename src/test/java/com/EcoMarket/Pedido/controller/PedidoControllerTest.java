@@ -5,7 +5,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import com.EcoMarket.Pedido.client.ClienteClient;
@@ -106,7 +105,7 @@ public class PedidoControllerTest {
 
     @Test
     void testGetObtenerTodosLosPedidos_CuandoHayPedidos() throws Exception {
-        when(pedidoService.listarTodos()).thenReturn(List.of(new Pedido()));
+        when(pedidoService.listarTodosPedidos()).thenReturn(List.of(new Pedido()));
 
         mockMvc.perform(get("/api/pedidos"))
                 .andExpect(status().isOk())
@@ -116,7 +115,7 @@ public class PedidoControllerTest {
 
     @Test
     void testGetObtenerTodosLosPedidos_CuandoNoHayPedidos() throws Exception {
-        when(pedidoService.listarTodos()).thenReturn(Collections.emptyList());
+        when(pedidoService.listarTodosPedidos()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/pedidos"))
                 .andExpect(status().isNoContent());
@@ -125,7 +124,7 @@ public class PedidoControllerTest {
     @Test
     void testEliminarPedido_Eliminado() throws Exception {
         Long pedidoId = 5L;
-        when(pedidoService.eliminar(pedidoId)).thenReturn(true);
+        when(pedidoService.eliminarPedido(pedidoId)).thenReturn(true);
 
         mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
                 .andExpect(status().isNoContent());
@@ -134,7 +133,7 @@ public class PedidoControllerTest {
     @Test
     void testEliminarPedido_NoEncontrado() throws Exception {
         Long pedidoId = 999L;
-        when(pedidoService.eliminar(pedidoId)).thenReturn(false);
+        when(pedidoService.eliminarPedido(pedidoId)).thenReturn(false);
 
         mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
                 .andExpect(status().isNotFound());

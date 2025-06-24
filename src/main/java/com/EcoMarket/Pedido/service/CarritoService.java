@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.EcoMarket.Pedido.client.ProductoClient;
-import com.EcoMarket.Pedido.dto.AgregarItemRespuestaDTO;
+import com.EcoMarket.Pedido.dto.AgregarProductoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.ItemCarritoDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
@@ -42,7 +42,7 @@ public class CarritoService {
 
     // Agrega un item al carrito del cliente, o actualiza la cantidad si ya existe.
     @Transactional
-    public CarritoRespuestaDTO agregarItemAlCarrito(Long clienteId, AgregarItemRespuestaDTO itemRequest) {
+    public CarritoRespuestaDTO agregarProductoAlCarrito(Long clienteId, AgregarProductoRespuestaDTO itemRequest) {
         Optional<Carrito> carritoOpt = carritoRepository.findByClienteId(clienteId);
         Carrito carrito = carritoOpt.orElseGet(() -> {
             Carrito nuevoCarrito = new Carrito();
@@ -66,7 +66,7 @@ public class CarritoService {
 
     // Elimina un item del carrito del cliente, reduciendo la cantidad.
     @Transactional
-    public CarritoRespuestaDTO eliminarItemDelCarrito(Long clienteId, Long productoId, int cantidadAEliminar) {
+    public CarritoRespuestaDTO eliminarProductoDelCarrito(Long clienteId, Long productoId, int cantidadAEliminar) {
         Carrito carrito = carritoRepository.findByClienteId(clienteId)
                 .orElseThrow(() -> new RuntimeException("Carrito no encontrado para el cliente con ID: " + clienteId));
 

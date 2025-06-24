@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.EcoMarket.Pedido.client.ProductoClient;
-import com.EcoMarket.Pedido.dto.AgregarItemRespuestaDTO;
+import com.EcoMarket.Pedido.dto.AgregarProductoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.service.CarritoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,14 +44,14 @@ public class CarritoControllerTest {
         @Test
         void testAgregarProducto_Exitoso() throws Exception {
                 Long clienteId = 1L;
-                AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
+                AgregarProductoRespuestaDTO itemRequest = new AgregarProductoRespuestaDTO();
                 itemRequest.setProductoId(101L);
                 itemRequest.setCantidad(2);
 
                 CarritoRespuestaDTO carritoActualizado = new CarritoRespuestaDTO();
                 carritoActualizado.setClienteId(clienteId);
 
-                when(carritoService.agregarItemAlCarrito(eq(clienteId), any(AgregarItemRespuestaDTO.class)))
+                when(carritoService.agregarProductoAlCarrito(eq(clienteId), any(AgregarProductoRespuestaDTO.class)))
                                 .thenReturn(carritoActualizado);
 
                 mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
@@ -64,9 +64,9 @@ public class CarritoControllerTest {
         @Test
         void testAgregarProducto_FalloPorProductoNoExistente() throws Exception {
                 Long clienteId = 1L;
-                AgregarItemRespuestaDTO itemRequest = new AgregarItemRespuestaDTO();
+                AgregarProductoRespuestaDTO itemRequest = new AgregarProductoRespuestaDTO();
 
-                when(carritoService.agregarItemAlCarrito(eq(clienteId), any(AgregarItemRespuestaDTO.class)))
+                when(carritoService.agregarProductoAlCarrito(eq(clienteId), any(AgregarProductoRespuestaDTO.class)))
                                 .thenThrow(new RuntimeException("Producto no existe"));
 
                 mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
@@ -84,7 +84,7 @@ public class CarritoControllerTest {
                 CarritoRespuestaDTO carritoActualizado = new CarritoRespuestaDTO();
                 carritoActualizado.setClienteId(clienteId);
 
-                when(carritoService.eliminarItemDelCarrito(eq(clienteId), eq(productoId), eq(cantidad)))
+                when(carritoService.eliminarProductoDelCarrito(eq(clienteId), eq(productoId), eq(cantidad)))
                                 .thenReturn(carritoActualizado);
 
                 mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId)
@@ -98,7 +98,7 @@ public class CarritoControllerTest {
                 Long clienteId = 1L;
                 Long productoId = 202L;
 
-                when(carritoService.eliminarItemDelCarrito(eq(clienteId), eq(productoId), anyInt()))
+                when(carritoService.eliminarProductoDelCarrito(eq(clienteId), eq(productoId), anyInt()))
                                 .thenThrow(new RuntimeException("Error al eliminar item"));
 
                 mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId))

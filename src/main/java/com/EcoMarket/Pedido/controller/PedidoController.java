@@ -46,7 +46,7 @@ public class PedidoController {
     // Obtiene todos los pedidos
     @GetMapping
     public ResponseEntity<List<Pedido>> obtenerTodosLosPedidos() {
-        List<Pedido> pedidos = pedidoService.listarTodos();
+        List<Pedido> pedidos = pedidoService.listarTodosPedidos();
         if (pedidos.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
@@ -56,7 +56,7 @@ public class PedidoController {
     // Elimina un pedido por ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarPedido(@PathVariable Long id) {
-        boolean eliminado = pedidoService.eliminar(id);
+        boolean eliminado = pedidoService.eliminarPedido(id);
         if (!eliminado) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
