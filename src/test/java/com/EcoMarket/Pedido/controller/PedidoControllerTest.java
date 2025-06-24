@@ -53,7 +53,7 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testPostCrearPedido_CreadoExitosamente() throws Exception {
+    void testCrearPedido_Exitosamente() throws Exception {
         Pedido pedidoACrear = new Pedido();
         pedidoACrear.setClienteId(1L);
 
@@ -72,7 +72,7 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testPostCrearPedido_Conflicto() throws Exception {
+    void testCrearPedido_Conflicto() throws Exception {
         Pedido pedidoACrear = new Pedido();
         when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(null);
 
@@ -104,7 +104,7 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testGetObtenerTodosLosPedidos_CuandoHayPedidos() throws Exception {
+    void testObtenerTodosLosPedidos_CuandoHayPedidos() throws Exception {
         when(pedidoService.listarTodosPedidos()).thenReturn(List.of(new Pedido()));
 
         mockMvc.perform(get("/api/pedidos"))
@@ -114,7 +114,7 @@ public class PedidoControllerTest {
     }
 
     @Test
-    void testGetObtenerTodosLosPedidos_CuandoNoHayPedidos() throws Exception {
+    void testObtenerTodosLosPedidos_CuandoNoHayPedidos() throws Exception {
         when(pedidoService.listarTodosPedidos()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/pedidos"))
