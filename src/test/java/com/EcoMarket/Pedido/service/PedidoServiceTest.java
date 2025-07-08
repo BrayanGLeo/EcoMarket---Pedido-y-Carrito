@@ -1,21 +1,20 @@
 package com.EcoMarket.Pedido.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.EcoMarket.Pedido.client.ClienteClient;
 import com.EcoMarket.Pedido.client.ProductoClient;
@@ -26,19 +25,19 @@ import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.model.ProductoPedido;
 import com.EcoMarket.Pedido.repository.PedidoRepository;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 public class PedidoServiceTest {
 
-    @Mock
+    @MockBean
     private PedidoRepository pedidoRepository;
 
-    @Mock
+    @MockBean
     private ProductoClient productoClient;
 
-    @Mock
+    @MockBean
     private ClienteClient clienteClient;
 
-    @InjectMocks
+    @Autowired
     private PedidoService pedidoService;
 
     private Pedido pedido;
@@ -87,19 +86,23 @@ public class PedidoServiceTest {
     }
 
     @Test
-    void testEliminarPedido() {
+    void testEliminarPedido_Exitoso() {
         when(pedidoRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(pedidoRepository).deleteById(1L);
-
         boolean resultado = pedidoService.eliminarPedido(1L);
-
         assertTrue(resultado);
-        verify(pedidoRepository, times(1)).existsById(1L);
-        verify(pedidoRepository, times(1)).deleteById(1L);
+        verify(pedidoRepository).deleteById(1L);
     }
 
     @Test
-    void testGuardarPedido() {
+    void testEliminarPedido_NoEncontrado() {
+        when(pedidoRepository.existsById(99L)).thenReturn(false);
+        boolean resultado = pedidoService.eliminarPedido(99L);
+        assertFalse(resultado);
+        verify(pedidoRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void testGuardarPedido_Exitoso() {
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedido);
 
         Pedido pedidoGuardado = pedidoService.guardarPedido(pedido);
@@ -110,33 +113,63 @@ public class PedidoServiceTest {
     }
 
     @Test
-    void testBuscarPedidoxId() {
+    void testGuardarPedido_ListaDeProductosNula() {
+        pedido.setProductos(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            pedidoService.guardarPedido(pedido);
+        });
+        assertEquals("El pedido debe tener al menos un producto.", exception.getMessage());
+    }
+
+    @Test
+    void testGuardarPedido_ListaDeProductosVacia() {
+        pedido.setProductos(Collections.emptyList());
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            pedidoService.guardarPedido(pedido);
+        });
+        assertEquals("El pedido debe tener al menos un producto.", exception.getMessage());
+    }
+
+    @Test
+    void testGuardarPedido_PrecioEsInvalido() {
+        pedido.getProductos().get(0).setPrecioUnitario(null);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            pedidoService.guardarPedido(pedido);
+        });
+        assertEquals("Cada item del pedido debe tener un precio unitario debe ser mayor 0.", exception.getMessage());
+    }
+
+    @Test
+    void testBuscarPedidoxId_Encontrado() {
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
 
         Pedido resultado = pedidoService.buscarPedidoxId(1L);
 
         assertNotNull(resultado);
         assertEquals(1L, resultado.getId());
-        verify(pedidoRepository, times(1)).findById(1L);
     }
 
     @Test
-    void testObtenerPedidoConDetalles() {
+    void testBuscarPedidoxId_NoEncontrado() {
+        when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
+        Pedido resultado = pedidoService.buscarPedidoxId(99L);
+        assertNull(resultado);
+    }
+
+    @Test
+    void testObtenerPedidoConDetalles_Exitoso() {
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
         when(clienteClient.getClienteById(1L)).thenReturn(clienteDTO);
-        when(pedidoRepository.findByClienteId(1L)).thenReturn(List.of(pedido));
-        when(productoClient.findProductosByIds(anyList())).thenReturn(List.of(productoDTO1, productoDTO2));
+        when(productoClient.findProductosByIds(List.of(01L, 02L))).thenReturn(List.of(productoDTO1, productoDTO2));
 
         PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
 
         assertNotNull(resultado);
-        assertEquals(pedido.getId(), resultado.getId());
-        assertEquals(pedido.getTotal(), resultado.getTotal());
+        assertEquals(1L, resultado.getId());
+        assertEquals("Pendiente", resultado.getEstado());
 
         assertNotNull(resultado.getCliente());
-        assertEquals(clienteDTO.getNombre(), resultado.getCliente().getNombre());
-        assertNotNull(resultado.getCliente().getHistorialPedidos());
-        assertEquals(1, resultado.getCliente().getHistorialPedidos().size());
+        assertEquals("Wacoldo", resultado.getCliente().getNombre());
 
         assertNotNull(resultado.getProductos());
         assertEquals(2, resultado.getProductos().size());
@@ -145,10 +178,30 @@ public class PedidoServiceTest {
         assertEquals("Azucar Flor", resultado.getProductos().get(1).getProducto().getNombre());
         assertEquals(25.0, resultado.getProductos().get(1).getTotalItem());
 
-        verify(pedidoRepository, times(1)).findById(1L);
-        verify(clienteClient, times(1)).getClienteById(1L);
-        verify(pedidoRepository, times(1)).findByClienteId(1L);
-        verify(productoClient, times(1)).findProductosByIds(anyList());
+        verify(pedidoRepository).findById(1L);
+        verify(clienteClient).getClienteById(1L);
+        verify(productoClient).findProductosByIds(anyList());
+    }
+
+    @Test
+    void testObtenerPedidoConDetalles_PedidoNoEncontrado() {
+        when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> {
+            pedidoService.obtenerPedidoConDetalles(99L);
+        });
+    }
+
+    @Test
+    void testObtenerDetallesDeProductos_ConListaVacia() {
+        pedido.setProductos(Collections.emptyList());
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(clienteClient.getClienteById(1L)).thenReturn(clienteDTO);
+
+        PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.getProductos().isEmpty());
+        verify(productoClient, never()).findProductosByIds(anyList());
     }
 
 }

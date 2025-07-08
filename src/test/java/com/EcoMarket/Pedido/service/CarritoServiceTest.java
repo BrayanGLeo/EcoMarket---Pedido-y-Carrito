@@ -12,26 +12,25 @@ import com.EcoMarket.Pedido.model.Carrito;
 import com.EcoMarket.Pedido.model.ItemCarrito;
 import com.EcoMarket.Pedido.repository.CarritoRepository;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 public class CarritoServiceTest {
 
-    @Mock
+    @MockBean
     private CarritoRepository carritoRepository;
 
-    @Mock
+    @MockBean
     private ProductoClient productoClient;
 
-    @InjectMocks
+    @Autowired
     private CarritoService carritoService;
 
     @Test

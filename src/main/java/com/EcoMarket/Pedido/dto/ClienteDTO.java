@@ -1,7 +1,5 @@
 package com.EcoMarket.Pedido.dto;
 
-import java.util.List;
-
 import lombok.Data;
 
 @Data
@@ -12,5 +10,4 @@ public class ClienteDTO {
     private String apellido;
     private String email;
     private String telefono;
-    private List<PedidoResumidoDTO> historialPedidos;
 }

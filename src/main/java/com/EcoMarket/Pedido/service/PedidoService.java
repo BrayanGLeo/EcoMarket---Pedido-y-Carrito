@@ -12,7 +12,6 @@ import com.EcoMarket.Pedido.client.ProductoClient;
 import com.EcoMarket.Pedido.dto.ClienteDTO;
 import com.EcoMarket.Pedido.dto.ProductoPedidoDTO;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
-import com.EcoMarket.Pedido.dto.PedidoResumidoDTO;
 import com.EcoMarket.Pedido.dto.ProductoDTO;
 import com.EcoMarket.Pedido.model.ProductoPedido;
 import com.EcoMarket.Pedido.model.Pedido;
@@ -60,39 +59,21 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    // Busca un pedido por ID, devuelve null si no existe.
     public Pedido buscarPedidoxId(Long id) {
         return pedidoRepository.findById(id).orElse(null);
     }
 
+    // Obtiene un pedido por ID y construye una respuesta con detalles del cliente y
+    // productos.
     public PedidoRespuestaDTO obtenerPedidoConDetalles(Long id) {
-        Pedido pedido = this.buscarPedidoxId(id);
-        if (pedido == null) {
-            throw new RuntimeException("Pedido no encontrado con id: " + id);
-        }
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con id: " + id));
 
-        ClienteDTO clienteCompleto = obtenerDatosCompletosCliente(pedido.getClienteId());
-        List<ProductoPedidoDTO> productosCompletos = obtenerDetallesDeProductos(pedido.getProductos());
+        ClienteDTO clienteInfo = clienteClient.getClienteById(pedido.getClienteId());
+        List<ProductoPedidoDTO> productosConDetalles = obtenerDetallesDeProductos(pedido.getProductos());
 
-        return construirRespuestaFinal(pedido, clienteCompleto, productosCompletos);
-    }
-
-    // Obtiene los datos completos del cliente, incluyendo su historial de pedidos.
-    private ClienteDTO obtenerDatosCompletosCliente(Long clienteId) {
-        ClienteDTO clienteDTO = clienteClient.getClienteById(clienteId);
-
-        if (clienteDTO != null) {
-            List<Pedido> historial = pedidoRepository.findByClienteId(clienteId);
-            List<PedidoResumidoDTO> historialDTO = historial.stream().map(p -> {
-                PedidoResumidoDTO resumido = new PedidoResumidoDTO();
-                resumido.setId(p.getId());
-                resumido.setFecha(p.getFecha());
-                resumido.setTotal(p.getTotal());
-                resumido.setEstado(p.getEstado());
-                return resumido;
-            }).collect(Collectors.toList());
-            clienteDTO.setHistorialPedidos(historialDTO);
-        }
-        return clienteDTO;
+        return construirRespuestaFinal(pedido, clienteInfo, productosConDetalles);
     }
 
     // Obtiene los detalles de cada producto en el pedido
@@ -100,28 +81,15 @@ public class PedidoService {
         if (items == null || items.isEmpty()) {
             return List.of();
         }
-
-        List<Long> productoIds = items.stream()
-                .map(ProductoPedido::getProductoId)
-                .collect(Collectors.toList());
-
+        List<Long> productoIds = items.stream().map(ProductoPedido::getProductoId).collect(Collectors.toList());
         List<ProductoDTO> productosDesdeApi = productoClient.findProductosByIds(productoIds);
-
         Map<Long, ProductoDTO> mapaProductos = productosDesdeApi.stream()
                 .collect(Collectors.toMap(ProductoDTO::getId, producto -> producto));
 
         return items.stream().map(item -> {
-            ProductoDTO productoDTO = mapaProductos.get(item.getProductoId());
-
-            ProductoDTO productoParaItem = new ProductoDTO();
-            if (productoDTO != null) {
-                productoParaItem.setId(productoDTO.getId());
-                productoParaItem.setNombre(productoDTO.getNombre());
-            }
-            productoParaItem.setPrecio(item.getPrecioUnitario());
-
+            ProductoDTO infoProducto = mapaProductos.get(item.getProductoId());
             ProductoPedidoDTO itemDTO = new ProductoPedidoDTO();
-            itemDTO.setProducto(productoParaItem);
+            itemDTO.setProducto(infoProducto);
             itemDTO.setCantidad(item.getCantidad());
             itemDTO.setTotalItem(item.getPrecioUnitario() * item.getCantidad());
             return itemDTO;
