@@ -192,6 +192,33 @@ public class PedidoServiceTest {
     }
 
     @Test
+    void testObtenerPedidoConDetalles_ElPedidoNoTieneProductos() {
+        pedido.setProductos(Collections.emptyList());
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(clienteClient.getClienteById(1L)).thenReturn(clienteDTO);
+
+        PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.getProductos().isEmpty());
+
+        verify(productoClient, never()).findProductosByIds(anyList());
+    }
+
+    @Test
+    void testObtenerPedidoConDetalles_LaListaDeProductosEsNula() {
+        pedido.setProductos(null);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));
+        when(clienteClient.getClienteById(1L)).thenReturn(clienteDTO);
+
+        PedidoRespuestaDTO resultado = pedidoService.obtenerPedidoConDetalles(1L);
+
+        assertNotNull(resultado);
+        assertTrue(resultado.getProductos().isEmpty());
+        verify(productoClient, never()).findProductosByIds(anyList());
+    }
+
+    @Test
     void testObtenerDetallesDeProductos_ConListaVacia() {
         pedido.setProductos(Collections.emptyList());
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(pedido));

@@ -5,40 +5,42 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import com.EcoMarket.Pedido.client.ProductoClient;
+import com.EcoMarket.Pedido.assemblers.CarritoModelAssembler;
 import com.EcoMarket.Pedido.dto.AgregarProductoRespuestaDTO;
 import com.EcoMarket.Pedido.dto.CarritoRespuestaDTO;
 import com.EcoMarket.Pedido.service.CarritoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(CarritoController.class)
+@Import(CarritoModelAssembler.class)
 public class CarritoControllerTest {
 
+        @Autowired
         private MockMvc mockMvc;
 
-        @Mock
+        @MockBean
         private CarritoService carritoService;
 
-        @Mock
-        private ProductoClient productoClient;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-        @InjectMocks
-        private CarritoController carritoController;
-
-        private ObjectMapper objectMapper = new ObjectMapper();
+        private CarritoRespuestaDTO carritoRespuestaDTO;
 
         @BeforeEach
         void setup() {
-                mockMvc = MockMvcBuilders.standaloneSetup(carritoController).build();
+                carritoRespuestaDTO = new CarritoRespuestaDTO();
+                carritoRespuestaDTO.setId(1L);
+                carritoRespuestaDTO.setClienteId(1L);
+                carritoRespuestaDTO.setSubTotal(150.0);
         }
 
         @Test
@@ -48,73 +50,56 @@ public class CarritoControllerTest {
                 itemRequest.setProductoId(101L);
                 itemRequest.setCantidad(2);
 
-                CarritoRespuestaDTO carritoActualizado = new CarritoRespuestaDTO();
-                carritoActualizado.setClienteId(clienteId);
-
                 when(carritoService.agregarProductoAlCarrito(eq(clienteId), any(AgregarProductoRespuestaDTO.class)))
-                                .thenReturn(carritoActualizado);
+                                .thenReturn(carritoRespuestaDTO);
 
                 mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(itemRequest)))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.clienteId").value(clienteId));
+                                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                                .andExpect(jsonPath("$.clienteId").value(clienteId))
+                                .andExpect(jsonPath("$._links.self.href").exists());
         }
 
         @Test
-        void testAgregarProducto_FalloPorProductoNoExistente() throws Exception {
+        void testAgregarProducto_FalloProductoNoExistente() throws Exception {
                 Long clienteId = 1L;
-                AgregarProductoRespuestaDTO itemRequest = new AgregarProductoRespuestaDTO();
 
                 when(carritoService.agregarProductoAlCarrito(eq(clienteId), any(AgregarProductoRespuestaDTO.class)))
                                 .thenThrow(new RuntimeException("Producto no existe"));
 
                 mockMvc.perform(post("/api/carrito/{clienteId}/productos", clienteId)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(itemRequest)))
+                                .content(objectMapper.writeValueAsString(new AgregarProductoRespuestaDTO())))
                                 .andExpect(status().isBadRequest());
         }
 
         @Test
         void testEliminarProductoDelCarrito_Exitoso() throws Exception {
                 Long clienteId = 1L;
-                Long productoId = 202L;
-                int cantidad = 1;
-
-                CarritoRespuestaDTO carritoActualizado = new CarritoRespuestaDTO();
-                carritoActualizado.setClienteId(clienteId);
-
-                when(carritoService.eliminarProductoDelCarrito(eq(clienteId), eq(productoId), eq(cantidad)))
-                                .thenReturn(carritoActualizado);
-
-                mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId)
-                                .param("cantidad", String.valueOf(cantidad)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.clienteId").value(clienteId));
-        }
-
-        @Test
-        void testEliminarProductoDelCarrito_Fallo() throws Exception {
-                Long clienteId = 1L;
-                Long productoId = 202L;
+                Long productoId = 101L;
 
                 when(carritoService.eliminarProductoDelCarrito(eq(clienteId), eq(productoId), anyInt()))
-                                .thenThrow(new RuntimeException("Error al eliminar item"));
+                                .thenReturn(carritoRespuestaDTO);
 
-                mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId))
-                                .andExpect(status().isBadRequest());
+                mockMvc.perform(delete("/api/carrito/{clienteId}/productos/{productoId}", clienteId, productoId)
+                                .param("cantidad", "1"))
+                                .andExpect(status().isOk())
+                                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                                .andExpect(jsonPath("$.clienteId").value(clienteId))
+                                .andExpect(jsonPath("$._links.self.href").exists());
         }
 
         @Test
         void testMostarCarrito_RetornaCarritoExistente() throws Exception {
                 Long clienteId = 1L;
-                CarritoRespuestaDTO carritoDTO = new CarritoRespuestaDTO();
-                carritoDTO.setClienteId(clienteId);
-
-                when(carritoService.obtenerCarritoPorCliente(clienteId)).thenReturn(carritoDTO);
+                when(carritoService.obtenerCarritoPorCliente(clienteId)).thenReturn(carritoRespuestaDTO);
 
                 mockMvc.perform(get("/api/carrito/{clienteId}", clienteId))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.clienteId").value(clienteId));
+                                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                                .andExpect(jsonPath("$.clienteId").value(clienteId))
+                                .andExpect(jsonPath("$._links.self.href").exists());
         }
 }

@@ -4,113 +4,111 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-import com.EcoMarket.Pedido.client.ClienteClient;
-import com.EcoMarket.Pedido.client.ProductoClient;
+import com.EcoMarket.Pedido.assemblers.PedidoModelAssembler;
 import com.EcoMarket.Pedido.dto.PedidoRespuestaDTO;
 import com.EcoMarket.Pedido.model.Pedido;
 import com.EcoMarket.Pedido.service.PedidoService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(PedidoController.class)
+@Import(PedidoModelAssembler.class)
 public class PedidoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Mock
+    @MockBean
     private PedidoService pedidoService;
 
-    @Mock
-    private ProductoClient productoClient;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @Mock
-    private ClienteClient clienteClient;
-
-    @InjectMocks
-    private PedidoController pedidoController;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private Pedido pedido;
+    private PedidoRespuestaDTO pedidoRespuestaDTO;
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pedidoController).build();
+        pedido = new Pedido();
+        pedido.setId(1L);
+        pedido.setClienteId(1L);
+        pedido.setFecha(LocalDateTime.now());
+        pedido.setTotal(100.0);
+        pedido.setEstado("CREADO");
+
+        pedidoRespuestaDTO = new PedidoRespuestaDTO();
+        pedidoRespuestaDTO.setId(1L);
+        pedidoRespuestaDTO.setTotal(100.0);
+        pedidoRespuestaDTO.setEstado("CREADO");
     }
 
     @Test
     void testCrearPedido_Exitosamente() throws Exception {
-        Pedido pedidoACrear = new Pedido();
-        pedidoACrear.setClienteId(1L);
-
-        Pedido pedidoGuardado = new Pedido();
-        pedidoGuardado.setId(100L);
-        pedidoGuardado.setClienteId(1L);
-
-        when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(pedidoGuardado);
+        when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(pedido);
 
         mockMvc.perform(post("/api/pedidos")
-                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(pedidoACrear)))
-                .andDo(print())
-                .andExpect(status().isCreated());
+                .content(objectMapper.writeValueAsString(new Pedido())))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$._links.self.href").exists());
     }
 
     @Test
     void testCrearPedido_Conflicto() throws Exception {
-        Pedido pedidoACrear = new Pedido();
         when(pedidoService.guardarPedido(any(Pedido.class))).thenReturn(null);
 
         mockMvc.perform(post("/api/pedidos")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(pedidoACrear)))
+                .content(objectMapper.writeValueAsString(new Pedido())))
                 .andExpect(status().isConflict());
     }
 
     @Test
     void testGetPedidoPorId_Encontrado() throws Exception {
-        Long pedidoId = 1L;
-        PedidoRespuestaDTO dto = new PedidoRespuestaDTO();
-        dto.setId(pedidoId);
-        when(pedidoService.obtenerPedidoConDetalles(pedidoId)).thenReturn(dto);
+        when(pedidoService.obtenerPedidoConDetalles(1L)).thenReturn(pedidoRespuestaDTO);
 
-        mockMvc.perform(get("/api/pedidos/{id}", pedidoId))
+        mockMvc.perform(get("/api/pedidos/{id}", 1L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(pedidoId));
+                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.estado").value("CREADO"))
+                .andExpect(jsonPath("$._links.self.href").exists())
+                .andExpect(jsonPath("$._links.pedidos.href").exists());
     }
 
     @Test
     void testGetPedidoPorId_NoEncontrado() throws Exception {
-        Long pedidoId = 99L;
-        when(pedidoService.obtenerPedidoConDetalles(pedidoId)).thenThrow(new RuntimeException("Pedido no encontrado"));
+        when(pedidoService.obtenerPedidoConDetalles(99L)).thenThrow(new RuntimeException("Pedido no encontrado"));
 
-        mockMvc.perform(get("/api/pedidos/{id}", pedidoId))
+        mockMvc.perform(get("/api/pedidos/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void testObtenerTodosLosPedidos_CuandoHayPedidos() throws Exception {
-        when(pedidoService.listarTodosPedidos()).thenReturn(List.of(new Pedido()));
+        when(pedidoService.listarTodosPedidos()).thenReturn(List.of(pedido));
 
         mockMvc.perform(get("/api/pedidos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0]").exists());
+                .andExpect(content().contentType(MediaTypes.HAL_JSON))
+                .andExpect(jsonPath("$._embedded.pedidoList[0].id").value(1L))
+                .andExpect(jsonPath("$._embedded.pedidoList[0]._links.self.href").exists())
+                .andExpect(jsonPath("$._links.self.href").exists());
     }
 
     @Test
@@ -123,19 +121,17 @@ public class PedidoControllerTest {
 
     @Test
     void testEliminarPedido_Eliminado() throws Exception {
-        Long pedidoId = 5L;
-        when(pedidoService.eliminarPedido(pedidoId)).thenReturn(true);
+        when(pedidoService.eliminarPedido(1L)).thenReturn(true);
 
-        mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
+        mockMvc.perform(delete("/api/pedidos/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void testEliminarPedido_NoEncontrado() throws Exception {
-        Long pedidoId = 999L;
-        when(pedidoService.eliminarPedido(pedidoId)).thenReturn(false);
+        when(pedidoService.eliminarPedido(99L)).thenReturn(false);
 
-        mockMvc.perform(delete("/api/pedidos/{id}", pedidoId))
+        mockMvc.perform(delete("/api/pedidos/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
 }
